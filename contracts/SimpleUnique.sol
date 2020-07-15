@@ -7,38 +7,33 @@ pragma solidity ^0.5.0;
 
 
 contract SimpleUnique {
-
     address owner;
-    uint256 totalCoins;
-    //mapping( address => uint ) private balances;                                /* wieviele Tokens hat die Adresse? */
-    string nameStr;
-    string symbolStr;
+    uint256 totalTokens;
+    string nameToken;
+    string symbolToken;
     mapping( address => uint256[] ) private tokensPerOwner;
     mapping( uint256 => address ) private whoHastoken;                          /* wer hat das Token x ? */
     mapping( address => mapping ( address => uint256 )) private allowed;        /* darf sich das Token holen */
+    mapping( uint256 => string ) private metaData;
 
     constructor(string memory _name, string memory _symbol) public {
         owner = msg.sender;
-        totalCoins = 0;
-        nameStr = _name;
-        symbolStr = _symbol;
+        totalTokens = 0;
+        nameToken = _name;
+        symbolToken = _symbol;
     }
 
     // --- Description ---
-    function name() public pure returns (string memory) {
-        return "NodeAndCode";
     function name() public view returns (string memory) {
-        return nameStr;
+        return nameToken;
     }
 
-    function symbol() public pure returns (string memory) {
-        return "NACU";
     function symbol() public view returns (string memory) {
-        return symbolStr;
+        return symbolToken;
     }
 
     function totalSupply() public view returns (uint256) {
-        return totalCoins;
+        return totalTokens;
     }
 
 
@@ -61,14 +56,16 @@ contract SimpleUnique {
 
 
     // --- Mint Token ---
-    function mintToken(uint256 _tokenId) public {
+    function mintToken(uint256 _tokenId, string memory _metaData) public {
         require( msg.sender == owner );
         require( _tokenId > 0 );
         require( whoHastoken[_tokenId] == address(0) );
 
         tokensPerOwner[owner].push(_tokenId);
         whoHastoken[_tokenId] = owner;
-        totalCoins++;
+        totalTokens++;
+
+        metaData[_tokenId] = _metaData;
     }
 
 
@@ -134,6 +131,11 @@ contract SimpleUnique {
 
         _transfer(currentOwner,newOwner,_tokenId);
     }
+
+    function tokenMetadata(uint256 _tokenId) public view returns (string memory) {
+        return metaData[_tokenId];
+    }
+
 
     event Transfer(address indexed _from, address indexed _to, uint256 _tokenId);
     event Approval(address indexed _owner, address indexed _approved, uint256 _tokenId);
