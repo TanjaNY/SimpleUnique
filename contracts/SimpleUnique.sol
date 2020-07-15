@@ -11,22 +11,30 @@ contract SimpleUnique {
     address owner;
     uint256 totalCoins;
     //mapping( address => uint ) private balances;                                /* wieviele Tokens hat die Adresse? */
+    string nameStr;
+    string symbolStr;
     mapping( address => uint256[] ) private tokensPerOwner;
     mapping( uint256 => address ) private whoHastoken;                          /* wer hat das Token x ? */
     mapping( address => mapping ( address => uint256 )) private allowed;        /* darf sich das Token holen */
 
-    constructor() public {
+    constructor(string memory _name, string memory _symbol) public {
         owner = msg.sender;
         totalCoins = 0;
+        nameStr = _name;
+        symbolStr = _symbol;
     }
 
     // --- Description ---
     function name() public pure returns (string memory) {
         return "NodeAndCode";
+    function name() public view returns (string memory) {
+        return nameStr;
     }
 
     function symbol() public pure returns (string memory) {
         return "NACU";
+    function symbol() public view returns (string memory) {
+        return symbolStr;
     }
 
     function totalSupply() public view returns (uint256) {
