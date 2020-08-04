@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Die 3 Meta-Tags oben *müssen* zuerst im head stehen; jeglicher sonstiger head-Inhalt muss *nach* diesen Tags kommen -->
+    <title>Token Browser</title>
+
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Unterstützung für Media Queries und HTML5-Elemente in IE8 über HTML5 shim und Respond.js -->
+    <!-- ACHTUNG: Respond.js funktioniert nicht, wenn du die Seite über file:// aufrufst -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+
+
+
+ <div class="jumbotron text-center">
+  <h1>SimpleUnique</h1>
+  <p>Meine erc-721 Token</p>
+</div>
+
+<div class="container">
+	<div class='form-group row'>
+		<label class='col-sm-2 col-form-label' for="contract">Token Name and Symbol</label>
+		<div class='col-sm-9'><input class='form-control' id='contract'/></div>
+	</div>
+
+	<div class='form-group row'>
+		<label for="acc" class='col-sm-2 col-form-label'>Account</label>
+		<div class='col-sm-9'>
+			<select class='form-control' id='acc'></select>
+		</div>
+	</div>
+
+	<table class='table table-hover table-fixed' id="tokenlist">
+		<thead>
+			<th class='col-4'>TokenId</th>
+			<th class='col-4'>Metadata</th>
+			<th class='col-4'>Send</th>
+		</thead>
+		<tbody>
+		</tbody>
+	</table>
+
+</div> 
+
+
+    <!-- jQuery (wird für Bootstrap JavaScript-Plugins benötigt) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <!-- Binde alle kompilierten Plugins zusammen ein (wie hier unten) oder such dir einzelne Dateien nach Bedarf aus -->
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js2/web3.min.js"></script>
+    <script src="js2/truffle-contract.js"></script>
+
+	<!-- jQuery Funktionalität -->
+<script>
+$(document).ready( () => {
+	App.init();
+});
+
+
+
+App = {
+	web3provider: null,
+	contracts: {},
+
+	init: async function() {
+		return await App.initWeb3();
+	},
+
+	initWeb3: async function() {
+		if(window.ethereum) {
+			App.web3Provider = window.ethereum;
+			try {
+				window.ethereum.enable();
+				console.log("Enable Metamask");
+			} 
+			catch(error) {
+				console.error(error);
+			}
+		}
+	    // Legacy dapp browsers...
+	    else if (window.web3) {
+	        App.web3Provider = window.web3.currentProvider;
+  	    }
+	    // If no injected web3 instance is detected, fall back to Ganache
+	    else {
+	  	    App.web3Provider = new Web3.providers.HttpProvider('http://localhost:7545');
+	    }
+		web3 = new Web3(App.web3Provider);
+
+		// --- Metamask accounts into user interface ---
+		web3.eth.getAccounts(function(error, accounts) {
+			console.log(accounts[0]);
+			App.account = accounts[0];
+			accounts.map( (entry) => {
+				$('#acc').append('<option>' + entry + '</option>');
+			});
+		});
+
+
+		return await App.initContract();
+	},
+
+	initContract: async function() {
+		
+		SimpleUniqueArtifact = await $.getJSON('/contract/SimpleUnique.json');
+		App.contracts.SimpleUnique = TruffleContract(SimpleUniqueArtifact);
+		App.contracts.SimpleUnique.setProvider(App.web3Provider);
+		simpleUniqueInstance = await App.contracts.SimpleUnique.deployed();
+		return await App.displayUI();
+	},
+
+	// -- display	
+	displayUI: async function() {
+		tokenName = await simpleUniqueInstance.name.call();
+		tokenSymbol = await simpleUniqueInstance.symbol.call();
+		$('#contract').attr('value',tokenSymbol);
+		idx = 0;
+		do {
+			tokenId = await simpleUniqueInstance.tokenOfOwnerByIndex.call(App.account,idx); 
+			metaData = await simpleUniqueInstance.tokenMetadata(tokenId);
+			if(tokenId > 0 ) {
+				console.log(tokenId + "  " + metaData);
+				$("#tokenlist").append("<tr class='d-flex'><td class='col-4'>"+ tokenId 
+										+ "</td><td class='col-4'>" + metaData 
+										+ "</td><td class='col-4'>" + App.showSendBox(tokenId) 
+										+ "</td></tr>"
+									  );
+			}
+			idx++;
+		} while (tokenId != 0)
+		console.log("OK");
+		return;
+	},
+
+	showSendBox: function(tokenId) {
+		return  "<input id=\'sendTo_"+tokenId+"\'/>"
+			   +"<button class=\'btn btn-success\' id=\'sendBtn_"+tokenId+"\' onclick=\'App.sendToken("+ tokenId+ ")\'>Send</button>";
+	},
+
+	sendToken: async function(tokenId) {
+		var toAddr = document.getElementById("sendTo_"+tokenId).value;
+		console.log('send token ' + tokenId + " to " + toAddr);
+		await simpleUniqueInstance.transfer(toAddr,tokenId);
+	}
+};
+
+
+
+</script>
+  </body>
+</html>

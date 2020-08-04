@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "express": "^4.17.1",
+    "nodemon": "^2.0.4"
+  },
+  "name": "SimpleUnique",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "ssh://git@git.kryptonerd.de:2222/NodeAndCode/SimpleUnique.git",
+  "author": "Conrad Beckert <cb@miradata.de>",
+  "license": "MIT",
+  "scripts": {
+    "test": "node ./index.js"
+  }
+}
