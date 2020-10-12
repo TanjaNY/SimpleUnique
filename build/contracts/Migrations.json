@@ -914,12 +914,18 @@
     "201901152030": {
       "events": {},
       "links": {},
-      "address": "0xDB79B43c9af3C4FD48505DEA616850de04Ec59Db",
-      "transactionHash": "0xde519dcaafdfd5d41554f0ad9b1de21df67e8c1616fb831d718bbe9352d403eb"
+      "address": "0xbC9E715BC6e4AC0DF4e7701717415a8E7d95c93b",
+      "transactionHash": "0xe135d75d20c79ae163a0146d8a1d466bcb05c2c37193835235f87ed88bd5d3ca"
+    },
+    "1598983240929": {
+      "events": {},
+      "links": {},
+      "address": "0x8B5dbF9C2Da821819392667f6E7789A3aFE77161",
+      "transactionHash": "0x3fc6f1f4df2455962403dae42b175250e53ea7f816ab58c1149bc94604d0687c"
     }
   },
   "schemaVersion": "3.2.1",
-  "updatedAt": "2020-07-23T21:02:37.740Z",
+  "updatedAt": "2020-10-12T20:39:33.447Z",
   "networkType": "ethereum",
   "devdoc": {
     "methods": {}

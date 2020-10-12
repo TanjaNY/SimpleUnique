@@ -12,8 +12,8 @@ contract SimpleUnique {
     string nameToken;
     string symbolToken;
     mapping( address => uint256[] ) private tokensPerOwner;
-    mapping( uint256 => address ) private whoHastoken;                          /* wer hat das Token x ? */
-    mapping( address => mapping ( address => uint256 )) private allowed;        /* darf sich das Token holen */
+    mapping( uint256 => address ) private whoHastoken;                          /* who owns that token */
+    mapping( address => mapping ( uint256 => address )) private allowed;        /* who can fetch this token */
     mapping( uint256 => string ) private metaData;
 
     constructor(string memory _name, string memory _symbol) public {
@@ -70,27 +70,28 @@ contract SimpleUnique {
 
 
     // --- search token in owner's list ---
-    function _searchToken( address _owner, uint256 _tokenId ) private view returns (uint256) {
+    function _searchToken( address _owner, uint256 _tokenId ) private view returns (int256) {
         uint256 n = 0;
         while (n < tokensPerOwner[_owner].length && tokensPerOwner[_owner][n] != _tokenId) {
           n++;
         }
         if ( tokensPerOwner[_owner][n] == _tokenId ) {
-          return n;  // --- gefunden  ---
+          return int256(n);  // --- token found in list  ---
         }
         else {
-          return 0; // nicht gefunden
+          return -1; // --- token not found --- 
         }
     }
 
     // --- Ownership Transfer ---
     function _transfer( address _from, address _to, uint256 _tokenId ) private {
-      uint256 pos = _searchToken( _from, _tokenId);
+	  require(msg.sender == ownerOf(_tokenId)); 
+      int256 pos = _searchToken( _from, _tokenId);
+	  require( pos >= 0 && pos < 2**255 - 1 );
       uint256 cnt = tokensPerOwner[_from].length - 1;
-
-      require( tokensPerOwner[_from][pos] == _tokenId ); // --- gefunden  ---
-
-      tokensPerOwner[_from][pos] = tokensPerOwner[_from][cnt];
+      require( tokensPerOwner[_from][uint256(pos)] == _tokenId ); // --- gefunden  ---
+	  
+      tokensPerOwner[_from][uint(pos)] = tokensPerOwner[_from][cnt];
       delete tokensPerOwner[_from][cnt];
       tokensPerOwner[_from].length--;
       tokensPerOwner[_to].push(_tokenId);
@@ -105,7 +106,6 @@ contract SimpleUnique {
         address currentOwner = msg.sender;
         address newOwner = _to;
 
-
         require( whoHastoken[_tokenId] != address(0) );
         require( newOwner != ownerOf(_tokenId) );
         require( newOwner != address(0) );
@@ -117,7 +117,7 @@ contract SimpleUnique {
         require( msg.sender == ownerOf(_tokenId) );
         require( msg.sender != _to );
 
-        allowed[msg.sender][_to] = _tokenId;
+        allowed[msg.sender][_tokenId] = _to;
         emit Approval(msg.sender, _to, _tokenId);
     }
 
@@ -127,10 +127,15 @@ contract SimpleUnique {
         address newOwner = msg.sender;
 
         require( newOwner != currentOwner );
-        require( allowed[currentOwner][newOwner] == _tokenId );
+        require( allowed[currentOwner][_tokenId] == newOwner );
 
         _transfer(currentOwner,newOwner,_tokenId);
     }
+
+	function getApproved(uint256 _tokenId) public view returns (address) {
+        address currentOwner = ownerOf(_tokenId);
+		return allowed[currentOwner][_tokenId];
+	}
 
     function tokenMetadata(uint256 _tokenId) public view returns (string memory) {
         return metaData[_tokenId];

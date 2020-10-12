@@ -16,14 +16,21 @@
       <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
-  </head>
-  <body>
-
-
-
- <div class="jumbotron text-center">
-  <h1>SimpleUnique</h1>
-  <p>Meine erc-721 Token</p>
+	<style type="text/css">
+		.h-divider {
+			border-top: 1px solid gray;
+			margin-top: 5px;
+			margin-bottom: 5px;
+		}
+		.tokenRow {
+			
+		}
+	</style> 
+</head>
+ <body>
+  <div class="jumbotron text-center">
+   <h1>SimpleUnique</h1>
+   <p>Meine erc-721 Token</p>
 </div>
 
 <div class="container">
@@ -39,27 +46,35 @@
 		</div>
 	</div>
 
-	<table class='table table-hover table-fixed' id="tokenlist">
-		<thead>
-			<th class='col-4'>TokenId</th>
-			<th class='col-4'>Metadata</th>
-			<th class='col-4'>Send</th>
-		</thead>
-		<tbody>
-		</tbody>
-	</table>
-
+	<div class='form-group row'>
+		<div class='col-sm-1'><label>TokenId</label></div> 
+		<div class='col-sm-7'><label>Metadata</label></div>
+		<div class='col-sm-4'><label>Send</label></div>
+	</div>
+	<div class="h-divider"></div>
+  	<div id="tokenlist">
+		<!-- list of my tokens -->
+	</div>
+	<div class="h-divider"></div>
+	<div class='form-group row'>
+		<div class='col-sm-1'><input class='form-control' id='fetchTokenId' onchange="App.metaDataUi()" align='right'/></div> 
+		<div class='col-sm-7'><p id="fetchTokenMeta">Enter tokenId</p></div>
+		<div class='col-sm-4'>
+			<input id='fetchFrom'/>
+			<button class='btn btn-primary' id='fetchBtn' onclick='App.fetchToken()'>Fetch</button>
+		</div>
+	</div>
 </div> 
 
 
-    <!-- jQuery (wird für Bootstrap JavaScript-Plugins benötigt) -->
+    <!-- jQuery (required for Bootstrap JavaScript-Plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-    <!-- Binde alle kompilierten Plugins zusammen ein (wie hier unten) oder such dir einzelne Dateien nach Bedarf aus -->
+    <!-- Bootstrap  -->
     <script src="js/bootstrap.min.js"></script>
     <script src="js2/web3.min.js"></script>
     <script src="js2/truffle-contract.js"></script>
 
-	<!-- jQuery Funktionalität -->
+	<!-- jQuery  -->
 <script>
 $(document).ready( () => {
 	App.init();
@@ -115,24 +130,37 @@ App = {
 		App.contracts.SimpleUnique = TruffleContract(SimpleUniqueArtifact);
 		App.contracts.SimpleUnique.setProvider(App.web3Provider);
 		simpleUniqueInstance = await App.contracts.SimpleUnique.deployed();
+		
+		// --- listen to Transfer Event ---
+		simpleUniqueInstance.Transfer((err,evt) => {
+			if(err) { console.log("Transfer Event Fails " + err); }
+			else if(evt.args._from == App.account || evt.args._to == App.account) {
+				App.displayUI();
+			}
+			var evtJSON = JSON.stringify(evt);
+			console.log(evtJSON);
+			console.log("Transfer Event von:" + evt.args._from + " nach: " + evt.args._to + " Token: " + evt.args._tokenId ); 
+		});	
 		return await App.displayUI();
 	},
 
-	// -- display	
+	// -- display --	
 	displayUI: async function() {
 		tokenName = await simpleUniqueInstance.name.call();
 		tokenSymbol = await simpleUniqueInstance.symbol.call();
 		$('#contract').attr('value',tokenSymbol);
+		$("#tokenlist").empty();
 		idx = 0;
 		do {
 			tokenId = await simpleUniqueInstance.tokenOfOwnerByIndex.call(App.account,idx); 
 			metaData = await simpleUniqueInstance.tokenMetadata(tokenId);
 			if(tokenId > 0 ) {
 				console.log(tokenId + "  " + metaData);
-				$("#tokenlist").append("<tr class='d-flex'><td class='col-4'>"+ tokenId 
-										+ "</td><td class='col-4'>" + metaData 
-										+ "</td><td class='col-4'>" + App.showSendBox(tokenId) 
-										+ "</td></tr>"
+				$("#tokenlist").append(	"<div class='form-group row'>" +
+										"<div class='col-sm-1' align='right'>" + tokenId + "</div>" +
+										"<div class='col-sm-7'>" + metaData + "</div>" +
+										"<div class='col-sm-4'>" + App.showSendBox(tokenId)+ "</div>" +
+										"</div>"
 									  );
 			}
 			idx++;
@@ -141,16 +169,42 @@ App = {
 		return;
 	},
 
+	// --- control elements for this token ---
 	showSendBox: function(tokenId) {
-		return  "<input id=\'sendTo_"+tokenId+"\'/>"
-			   +"<button class=\'btn btn-success\' id=\'sendBtn_"+tokenId+"\' onclick=\'App.sendToken("+ tokenId+ ")\'>Send</button>";
+		sendBox = "<input id=\'sendTo_"+tokenId+"\'/> " 
+			    + "<button class=\'btn btn-success\' id=\'sendBtn_"+tokenId+"\' onclick=\'App.sendToken("+ tokenId+ ")\'>Send</button> "
+			    + "<button class=\'btn btn-primary\' id=\'approveBtn_"+tokenId+"\' onclick=\'App.approveToken("+ tokenId+ ")\'>Approve</button>";
+		return sendBox;
 	},
+
+	// --- get and print meta data for tokenId ---
+	metaDataUi: async function() {
+		tokenId = $("#fetchTokenId").val();
+		console.log("tokenId:" + tokenId);
+		metaData = await simpleUniqueInstance.tokenMetadata(tokenId);
+		console.log("MetaData:" + metaData);
+		$("#fetchTokenMeta").text( metaData );
+	},
+
 
 	sendToken: async function(tokenId) {
 		var toAddr = document.getElementById("sendTo_"+tokenId).value;
 		console.log('send token ' + tokenId + " to " + toAddr);
 		await simpleUniqueInstance.transfer(toAddr,tokenId);
+	},
+
+	approveToken: async function(tokenId) {
+		var toAddr = document.getElementById("sendTo_"+tokenId).value;
+		console.log('approve token ' + tokenId + " for fetch from " + toAddr);
+		await simpleUniqueInstance.approve(toAddr,tokenId);
+	},
+
+	fetchToken: async function() {
+		var tokenId = document.getElementById("fetchTokenId").value;
+		console.log("fetch token " + tokenId);
+		await simpleUniqueInstance.takeOwnership(tokenId);
 	}
+	
 };
 
 
