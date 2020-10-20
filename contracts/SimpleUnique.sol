@@ -85,7 +85,6 @@ contract SimpleUnique {
 
     // --- Ownership Transfer ---
     function _transfer( address _from, address _to, uint256 _tokenId ) private {
-	  require(msg.sender == ownerOf(_tokenId)); 
       int256 pos = _searchToken( _from, _tokenId);
 	  require( pos >= 0 && pos < 2**255 - 1 );
       uint256 cnt = tokensPerOwner[_from].length - 1;
@@ -107,6 +106,7 @@ contract SimpleUnique {
         address newOwner = _to;
 
         require( whoHastoken[_tokenId] != address(0) );
+        require( currentOwner == ownerOf(_tokenId));
         require( newOwner != ownerOf(_tokenId) );
         require( newOwner != address(0) );
 
