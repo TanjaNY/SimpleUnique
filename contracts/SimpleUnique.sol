@@ -3,6 +3,10 @@ pragma solidity ^0.5.0;
 /*
 *    Simple Example of an unique non fungible ERC-721 token
 *    https://medium.com/crypto-currently/the-anatomy-of-erc721-e9db77abfc24
+*
+*    Author and (c) Conrad Beckert conrad@kryptonerd.de
+*    Licence: GNU GENERAL PUBLIC LICENSE V3
+*
 */
 
 

@@ -1,0 +1,9 @@
+node_modules/
+build/
+client/bootstrap-3.3.5-dist/
+client/views/truffle-contract.js
+client/views/web3.min.js
+package.json
+truffle-config.js
+yarn.log
+*.log
